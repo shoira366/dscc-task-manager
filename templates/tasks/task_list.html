@@ -1,31 +1,73 @@
 {% extends "base.html" %}
-
 {% block content %}
+<style>
+  .tm-wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  .tm-card { background:#fff; border:1px solid #e6e6e6; border-radius:14px; padding:16px; box-shadow: 0 1px 8px rgba(0,0,0,0.04); }
+  .tm-title { margin:0 0 14px; font-size: 24px; }
+  .tm-table { width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid #eee; border-radius:12px; }
+  .tm-table th, .tm-table td { text-align:left; padding:10px 12px; border-bottom:1px solid #eee; font-size: 14px; vertical-align: middle; }
+  .tm-table th { background:#fafafa; color:#333; font-weight:700; }
+  .tm-table tr:last-child td { border-bottom:none; }
+  .tm-link { text-decoration:none; color:#111; font-weight:600; }
+  .tm-link:hover { text-decoration:underline; }
+  .tm-muted { color:#777; font-size: 13px; }
+  .tm-select { padding:8px 10px; border-radius:10px; border:1px solid #ddd; background:#fff; }
+  .tm-btn { padding:8px 12px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+  .tm-btn:hover { background:#f6f6f6; }
+  .tm-empty { color:#777; background:#fafafa; border:1px dashed #ddd; border-radius:12px; padding:14px; }
+</style>
 
-<h2>Tasks</h2>
+<div class="tm-wrap">
+  <div class="tm-card">
+    <h1 class="tm-title">All My Group Tasks</h1>
 
-<a class="btn btn-success mb-3" href="{% url 'task_create' %}">
-    Create Task
-</a>
+    {% if tasks %}
+      <table class="tm-table">
+        <tr>
+          <th>Task</th>
+          <th>Group</th>
+          <th>Assignee</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Due</th>
+        </tr>
 
-<table class="table table-striped">
-<tr>
-    <th>Title</th>
-    <th>Category</th>
-    <th>Actions</th>
-</tr>
+        {% for t in tasks %}
+          <tr>
+            <td>
+              <a class="tm-link" href="{% url 'task_detail' t.id %}">{{ t.title }}</a>
+              {% if t.description %}
+                <div class="tm-muted">{{ t.description|truncatechars:70 }}</div>
+              {% endif %}
+            </td>
+            <td><a class="tm-link" href="{% url 'group_detail' t.group.id %}">{{ t.group.name }}</a></td>
+            <td>{{ t.assigned_to.username }}</td>
 
-{% for task in tasks %}
-<tr>
-    <td>{{ task.title }}</td>
-    <td>{{ task.category }}</td>
-    <td>
-        <a class="btn btn-warning btn-sm" href="{% url 'task_update' task.id %}">Edit</a>
-        <a class="btn btn-danger btn-sm" href="{% url 'task_delete' task.id %}">Delete</a>
-    </td>
-</tr>
-{% endfor %}
+            <td>
+                {% if t.can_update_status %}
+                    <form method="post" action="{% url 'task_status_update' t.id %}">
+                    {% csrf_token %}
+                    <select name="status" class="tm-select" onchange="this.form.submit()">
+                        <option value="TODO" {% if t.status == "TODO" %}selected{% endif %}>To Do</option>
+                        <option value="IN_PROGRESS" {% if t.status == "IN_PROGRESS" %}selected{% endif %}>In Progress</option>
+                        <option value="DONE" {% if t.status == "DONE" %}selected{% endif %}>Done</option>
+                    </select>
+                    <noscript><button class="tm-btn" type="submit">Update</button></noscript>
+                    </form>
+                {% else %}
+                    <span class="tm-pill">{{ t.get_status_display }}</span>
+                    <div class="tm-muted">Only assignee/leader can update</div>
+                {% endif %}
+            </td>
 
-</table>
-
+            <td>{{ t.get_priority_display }}</td>
+            <td class="tm-muted">{% if t.due_date %}{{ t.due_date }}{% else %}-{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <div class="tm-empty">No tasks found in your groups.</div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

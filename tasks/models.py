@@ -2,20 +2,68 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=100)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+class Group(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="groups_created")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
-class Task(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    assigned_users = models.ManyToManyField(User)
-    created_at = models.DateTimeField(auto_now_add=True)
+class Membership(models.Model):
+    ROLE_MEMBER = "MEMBER"
+    ROLE_LEADER = "LEADER"
+    ROLE_CHOICES = [
+        (ROLE_MEMBER, "Member"),
+        (ROLE_LEADER, "Leader"),
+    ]
 
-    def __str__(self):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="memberships")
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "group")
+
+    def __str__(self) -> str:
+        return f"{self.user.username} -> {self.group.name} ({self.role})"
+
+
+class Task(models.Model):
+    STATUS_TODO = "TODO"
+    STATUS_IN_PROGRESS = "IN_PROGRESS"
+    STATUS_DONE = "DONE"
+    STATUS_CHOICES = [
+        (STATUS_TODO, "To Do"),
+        (STATUS_IN_PROGRESS, "In Progress"),
+        (STATUS_DONE, "Done"),
+    ]
+
+    PRIORITY_LOW = "LOW"
+    PRIORITY_MEDIUM = "MEDIUM"
+    PRIORITY_HIGH = "HIGH"
+    PRIORITY_CHOICES = [
+        (PRIORITY_LOW, "Low"),
+        (PRIORITY_MEDIUM, "Medium"),
+        (PRIORITY_HIGH, "High"),
+    ]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="tasks")
+    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks_assigned")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks_created")
+
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_TODO)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
+    due_date = models.DateField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
         return self.title

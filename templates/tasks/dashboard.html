@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .tm-wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  .tm-header { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom: 18px; }
+  .tm-title { margin:0; font-size: 28px; }
+  .tm-sub { margin:6px 0 0; color:#666; }
+  .tm-actions { display:flex; gap:10px; flex-wrap:wrap; }
+  .tm-btn {
+    display:inline-block; padding:10px 14px; border-radius:10px; text-decoration:none;
+    border:1px solid #ddd; background:#fff; color:#111;
+  }
+  .tm-btn:hover { background:#f6f6f6; }
+  .tm-grid { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:16px; }
+  .tm-card {
+    background:#fff; border:1px solid #e6e6e6; border-radius:14px; padding:16px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+  }
+  .tm-card h2 { margin:0 0 10px; font-size: 18px; }
+  .tm-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .tm-item {
+    border:1px solid #eee; border-radius:12px; padding:12px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .tm-item a { text-decoration:none; color:#111; font-weight:600; }
+  .tm-muted { color:#777; font-size: 13px; }
+  .tm-badge { font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid #ddd; white-space:nowrap; }
+  .tm-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .tm-empty { color:#777; background:#fafafa; border:1px dashed #ddd; border-radius:12px; padding:14px; }
+  .tm-kpis { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top: 12px; }
+  .tm-kpi { border:1px solid #eee; border-radius:12px; padding:12px; }
+  .tm-kpi .n { font-size: 22px; font-weight:800; margin:0; }
+  .tm-kpi .l { margin:4px 0 0; color:#777; font-size: 12px; }
+  @media (max-width: 900px) { .tm-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="tm-wrap">
+  <div class="tm-header">
+    <div>
+      <h1 class="tm-title">Dashboard</h1>
+      <p class="tm-sub">Welcome, <strong>{{ request.user.username }}</strong>. Here’s your work overview.</p>
+    </div>
+    <div class="tm-actions">
+      <a class="tm-btn" href="{% url 'group_list' %}">View Groups</a>
+      <a class="tm-btn" href="{% url 'task_list' %}">All My Group Tasks</a>
+    </div>
+  </div>
+
+  <div class="tm-grid">
+    <!-- Left: My Tasks -->
+    <div class="tm-card">
+      <div class="tm-row" style="justify-content:space-between;">
+        <h2>My tasks</h2>
+        <span class="tm-muted">Assigned to you</span>
+      </div>
+
+      {% if my_tasks %}
+        <ul class="tm-list">
+          {% for task in my_tasks %}
+            <li class="tm-item">
+              <div>
+                <a href="{% url 'task_detail' task.id %}">{{ task.title }}</a>
+                <div class="tm-muted">
+                  Group: <a href="{% url 'group_detail' task.group.id %}">{{ task.group.name }}</a>
+                  {% if task.due_date %} • Due: {{ task.due_date }}{% endif %}
+                </div>
+              </div>
+
+              <div class="tm-row">
+                <span class="tm-badge">{{ task.get_priority_display }}</span>
+                <span class="tm-badge">{{ task.get_status_display }}</span>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="tm-empty">No tasks assigned to you yet.</div>
+      {% endif %}
+
+      <div class="tm-kpis">
+        <div class="tm-kpi">
+          <p class="n">{{ my_tasks|length }}</p>
+          <p class="l">My tasks</p>
+        </div>
+        <div class="tm-kpi">
+          <p class="n">{{ groups|length }}</p>
+          <p class="l">My groups</p>
+        </div>
+        <div class="tm-kpi">
+          <p class="n">{{ recent_tasks|length }}</p>
+          <p class="l">Recent tasks shown</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Groups + Recent -->
+    <div class="tm-card">
+      <h2>My groups</h2>
+
+      {% if groups %}
+        <ul class="tm-list" style="margin-bottom:14px;">
+          {% for group in groups %}
+            <li class="tm-item">
+              <div>
+                <a href="{% url 'group_detail' group.id %}">{{ group.name }}</a>
+                <div class="tm-muted">{{ group.description|default:"No description."|truncatechars:70 }}</div>
+              </div>
+              <span class="tm-badge">Open</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="tm-empty">You are not a member of any group yet.</div>
+      {% endif %}
+
+      <hr style="border:none; border-top:1px solid #eee; margin:14px 0;">
+
+      <h2>Recent activity</h2>
+
+        {% if is_leader_anywhere %}
+        {% if leader_created_tasks %}
+            <ul class="tm-list">
+            {% for task in leader_created_tasks %}
+                <li class="tm-item">
+                <div>
+                    <a href="{% url 'task_detail' task.id %}">{{ task.title|truncatechars:45 }}</a>
+                    <div class="tm-muted">
+                    {{ task.group.name }} • Assigned to {{ task.assigned_to.username }}
+                    </div>
+                </div>
+                <span class="tm-badge">{{ task.get_status_display }}</span>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <div class="tm-empty">No tasks created yet.</div>
+        {% endif %}
+        {% else %}
+        <div class="tm-empty">No announcements. Check your assigned tasks on the left.</div>
+        {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

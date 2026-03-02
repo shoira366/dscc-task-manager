@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .tm-wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  .tm-top { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom: 16px; }
+  .tm-title { margin:0; font-size: 28px; }
+  .tm-sub { margin:6px 0 0; color:#666; }
+  .tm-actions { display:flex; gap:10px; flex-wrap:wrap; }
+  .tm-btn {
+    display:inline-block; padding:10px 14px; border-radius:10px; text-decoration:none;
+    border:1px solid #ddd; background:#fff; color:#111;
+  }
+  .tm-btn:hover { background:#f6f6f6; }
+  .tm-grid { display:grid; grid-template-columns: 0.9fr 1.1fr; gap:16px; }
+  .tm-card {
+    background:#fff; border:1px solid #e6e6e6; border-radius:14px; padding:16px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+  }
+  .tm-card h2 { margin:0 0 12px; font-size: 18px; }
+  .tm-kpis { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top: 10px; }
+  .tm-kpi { border:1px solid #eee; border-radius:12px; padding:12px; }
+  .tm-kpi .n { font-size: 22px; font-weight:800; margin:0; }
+  .tm-kpi .l { margin:4px 0 0; color:#777; font-size: 12px; }
+
+  .tm-table { width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid #eee; border-radius:12px; }
+  .tm-table th, .tm-table td { text-align:left; padding:10px 12px; border-bottom:1px solid #eee; font-size: 14px; }
+  .tm-table th { background:#fafafa; color:#333; font-weight:700; }
+  .tm-table tr:last-child td { border-bottom:none; }
+
+  .tm-pill { font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid #ddd; display:inline-block; }
+  .tm-muted { color:#777; font-size: 13px; }
+  .tm-empty { color:#777; background:#fafafa; border:1px dashed #ddd; border-radius:12px; padding:14px; }
+
+  .tm-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .tm-link { text-decoration:none; color:#111; font-weight:600; }
+  .tm-link:hover { text-decoration:underline; }
+
+  @media (max-width: 900px) { .tm-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="tm-wrap">
+  <div class="tm-top">
+    <div>
+      <h1 class="tm-title">{{ group.name }}</h1>
+      <p class="tm-sub">{{ group.description|default:"No description yet." }}</p>
+      <p class="tm-muted" style="margin:6px 0 0;">
+        You are viewing this group as <strong>{{ request.user.username }}</strong>
+        {% if can_manage %} • <span class="tm-pill">Leader/Admin</span>{% endif %}
+      </p>
+    {% if can_manage %}
+      <a href="{% url 'add_member' group.id %}">+ Add member</a>
+    {% endif %}
+    </div>
+
+    <div class="tm-actions">
+      <a class="tm-btn" href="{% url 'group_list' %}">← Back to Groups</a>
+      <a class="tm-btn" href="{% url 'task_list' %}">All Tasks</a>
+      {% if can_manage %}
+        <a class="tm-btn" href="{% url 'task_create' %}">+ Assign Task</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="tm-card" style="margin-bottom:16px;">
+    <h2>Quick summary</h2>
+    <div class="tm-kpis">
+      <div class="tm-kpi">
+        <p class="n">{{ members|length }}</p>
+        <p class="l">Members</p>
+      </div>
+      <div class="tm-kpi">
+        <p class="n">{{ tasks|length }}</p>
+        <p class="l">Tasks</p>
+      </div>
+      <div class="tm-kpi">
+        <p class="n">{{ group.created_at|date:"Y-m-d" }}</p>
+        <p class="l">Created</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tm-grid">
+    <!-- Members -->
+    <div class="tm-card">
+      <h2>Members</h2>
+
+      {% if members %}
+        <table class="tm-table">
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Joined</th>
+          </tr>
+          {% for m in members %}
+            <tr>
+              <td>{{ m.user.username }}</td>
+              <td>
+                {% if m.role == "LEADER" %}
+                  <span class="tm-pill">Leader</span>
+                {% else %}
+                  <span class="tm-pill">Member</span>
+                {% endif %}
+              </td>
+              <td class="tm-muted">{{ m.joined_at|date:"Y-m-d" }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <div class="tm-empty">No members found in this group.</div>
+      {% endif %}
+    </div>
+
+    <!-- Tasks -->
+    <div class="tm-card">
+      <div class="tm-row" style="justify-content:space-between; margin-bottom:10px;">
+        <h2 style="margin:0;">Tasks</h2>
+        <span class="tm-muted">Only members can view. Leaders can assign.</span>
+      </div>
+
+      {% if tasks %}
+        <table class="tm-table">
+          <tr>
+            <th>Task</th>
+            <th>Assignee</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Due</th>
+          </tr>
+          {% for t in tasks %}
+            <tr>
+              <td>
+                <a class="tm-link" href="{% url 'task_detail' t.id %}">{{ t.title }}</a>
+                {% if t.description %}
+                  <div class="tm-muted">{{ t.description|truncatechars:70 }}</div>
+                {% endif %}
+              </td>
+              <td>{{ t.assigned_to.username }}</td>
+              <td><span class="tm-pill">{{ t.get_status_display }}</span></td>
+              <td><span class="tm-pill">{{ t.get_priority_display }}</span></td>
+              <td class="tm-muted">{% if t.due_date %}{{ t.due_date }}{% else %}-{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <div class="tm-empty">No tasks in this group yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
