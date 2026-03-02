@@ -8,16 +8,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup SSH key
-        run: |
-          mkdir -p "$HOME/.ssh"
-          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > "$HOME/.ssh/id_ed25519"
-          chmod 600 "$HOME/.ssh/id_ed25519"
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> "$HOME/.ssh/known_hosts"
+      - name: Start SSH agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_KEY }}
 
-      - name: Deploy over SSH
+      - name: Add host to known_hosts
         run: |
-          ssh -i "$HOME/.ssh/id_ed25519" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
             cd /opt/dscc-task-manager
             git pull origin main
