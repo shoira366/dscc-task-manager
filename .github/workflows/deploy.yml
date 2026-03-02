@@ -21,6 +21,6 @@ jobs:
             set -e
             cd /opt/dscc-task-manager
             git pull origin main
-            docker compose up -d --build
-            docker compose ps
+            docker compose build --pull
+            docker compose up -d
           EOF
