@@ -14,17 +14,18 @@ jobs:
           ssh-private-key: |
             ${{ secrets.SSH_KEY }}
 
-      - name: Add host to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e
-            cd /opt/dscc-task-manager
-            git pull origin main
-            docker compose build --pull
-            docker compose up -d
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=4 \
+            -o ConnectTimeout=20 \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+              set -e
+              cd /opt/dscc-task-manager
+              git pull origin main
+              docker compose build --pull
+              docker compose up -d
           EOF
