@@ -9,13 +9,19 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
 
   web:
     build: .
     env_file: .env
     depends_on:
       - db
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 2
+      --timeout 60
     volumes:
       - static_volume:/app/staticfiles
 
