@@ -54,9 +54,9 @@ class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
 
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="tasks")
-    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks_assigned")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks_created")
+    group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="created_tasks")
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_tasks")
 
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_TODO)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
