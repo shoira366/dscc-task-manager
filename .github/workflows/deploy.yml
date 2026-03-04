@@ -108,7 +108,14 @@ jobs:
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
               set -e
               cd /opt/dscc-task-manager
+
               git pull origin main
+
               docker compose pull web
               docker compose up -d
+
+              # Run migrations automatically
+              docker compose exec -T web python manage.py migrate --noinput
+              # Collect static (safe to run repeatedly)
+              docker compose exec -T web python manage.py collectstatic --noinput
           EOF
