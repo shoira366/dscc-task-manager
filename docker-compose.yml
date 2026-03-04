@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:15
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -9,7 +10,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   web:
-    image: ghcr.io/shoira366/dscc-task-manager-web:latest
+    build: .
+    restart: unless-stopped
     env_file: .env
     depends_on:
       - db
@@ -23,6 +25,7 @@ services:
 
   nginx:
     image: nginx:alpine
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -36,12 +39,7 @@ services:
 
   certbot:
     image: certbot/certbot:latest
+    restart: unless-stopped
     volumes:
       - certbot_www:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
-
-volumes:
-  postgres_data:
-  static_volume:
-  certbot_www:
-  letsencrypt:
