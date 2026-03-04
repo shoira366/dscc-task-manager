@@ -111,11 +111,16 @@ jobs:
 
               git pull origin main
 
+              # Get the new image
               docker compose pull web
-              docker compose up -d
 
-              # Run migrations automatically
+              # Start/replace web first (nginx can keep serving while web restarts)
+              docker compose up -d --no-deps web
+
+              # DB migrations + static
               docker compose exec -T web python manage.py migrate --noinput
-              # Collect static (safe to run repeatedly)
               docker compose exec -T web python manage.py collectstatic --noinput
+
+              # Reload nginx config without killing it (keeps TLS and connections steadier)
+              docker compose exec -T nginx nginx -s reload || docker compose restart nginx
           EOF
