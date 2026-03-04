@@ -7,6 +7,11 @@
 <form method="post" class="card p-4">
     {% csrf_token %}
     {{ form.as_p }}
+     <p class="text-muted">
+        You don't have an account?
+        <a href="{% url 'request_access' %}">Register</a>
+    </p>
+
     <button class="btn btn-primary">Login</button>
 </form>
 

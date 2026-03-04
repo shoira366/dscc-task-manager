@@ -1,7 +1,9 @@
 from django import forms
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 
-from .models import Task, Group, Membership
+from .models import Task, Group, Membership, RegistrationRequest
 
 
 class TaskForm(forms.ModelForm):
@@ -20,7 +22,7 @@ class TaskForm(forms.ModelForm):
         self.user = user
         self.locked_group = group
 
-    # 1) Group queryset (what groups appear in dropdown)
+        # 1) Group queryset (what groups appear in dropdown)
         if group is not None:
             self.fields["group"].queryset = Group.objects.filter(pk=group.pk)
             self.fields["group"].disabled = True
@@ -50,39 +52,55 @@ class TaskForm(forms.ModelForm):
             if init_group_id:
                 chosen_group = Group.objects.filter(pk=init_group_id).first()
 
-    # 3) Assigned_to queryset depends on chosen_group
+        # 3) Assigned_to queryset depends on chosen_group
         if chosen_group is not None:
-            self.fields["assigned_to"].queryset = User.objects.filter(
-                memberships__group=chosen_group
-            ).distinct().order_by("username")
+            self.fields["assigned_to"].queryset = (
+                User.objects.filter(memberships__group=chosen_group)
+                .distinct()
+                .order_by("username")
+            )
         else:
             self.fields["assigned_to"].queryset = User.objects.none()
 
     class Meta:
         model = Task
-        fields = ["title", "description", "group", "assigned_to", "status", "priority", "due_date"]
+        fields = [
+            "title",
+            "description",
+            "group",
+            "assigned_to",
+            "status",
+            "priority",
+            "due_date",
+        ]
         widgets = {
             "due_date": forms.DateInput(attrs={"type": "date"}),
         }
+
 
 class TaskStatusForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = ["status"]
 
+
 class AddMemberForm(forms.Form):
     user = forms.ModelChoiceField(
         queryset=User.objects.all(),
-        widget=forms.Select(attrs={
-            "class": "form-select",
-        })
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
     )
 
     role = forms.ChoiceField(
         choices=Membership.ROLE_CHOICES,
-        widget=forms.Select(attrs={
-            "class": "form-select",
-        })
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
     )
 
     def __init__(self, *args, group: Group, **kwargs):
@@ -97,3 +115,40 @@ class AddMemberForm(forms.Form):
         # Better labels
         self.fields["user"].label = "Select user"
         self.fields["role"].label = "Member role"
+
+
+class RegistrationRequestForm(forms.Form):
+    username = forms.CharField(max_length=150)
+    email = forms.EmailField(required=False)
+    password1 = forms.CharField(widget=forms.PasswordInput)
+    password2 = forms.CharField(widget=forms.PasswordInput)
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username already taken.")
+        if RegistrationRequest.objects.filter(
+            username=username, status="pending"
+        ).exists():
+            raise forms.ValidationError(
+                "A pending request already exists for this username."
+            )
+        return username
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get("password1")
+        p2 = cleaned.get("password2")
+        if p1 and p2 and p1 != p2:
+            self.add_error("password2", "Passwords do not match.")
+        if p1:
+            validate_password(p1)
+        return cleaned
+
+    def save(self):
+        return RegistrationRequest.objects.create(
+            username=self.cleaned_data["username"],
+            email=self.cleaned_data.get("email", ""),
+            password=make_password(self.cleaned_data["password1"]),
+            status=RegistrationRequest.STATUS_PENDING,
+        )
