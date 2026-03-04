@@ -9,8 +9,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   web:
-    web:
-      image: ghcr.io/shoira366/dscc-task-manager-web:latest
+    image: ghcr.io/shoira366/dscc-task-manager-web:latest
     env_file: .env
     depends_on:
       - db
