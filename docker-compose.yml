@@ -43,3 +43,8 @@ services:
     volumes:
       - certbot_www:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
+volumes:
+  postgres_data:
+  static_volume:
+  certbot_www:
+  letsencrypt:
