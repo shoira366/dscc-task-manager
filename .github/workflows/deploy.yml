@@ -9,7 +9,7 @@ env:
   IMAGE_NAME: shoira366/dscc-task-manager-web
 
 jobs:
-    ci:
+  ci:
     runs-on: ubuntu-latest
 
     services:
