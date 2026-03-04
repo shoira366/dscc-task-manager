@@ -1,19 +1,115 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-<h1>Add member to: {{ group.name }}</h1>
+<div class="container py-4" style="max-width: 980px;">
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div>
+      <h2 class="mb-1">Add member</h2>
+      <div class="text-muted">Invite someone to a group and set their role.</div>
+    </div>
+    <a href="{% url 'group_detail' group.id %}" class="btn btn-outline-secondary">
+      ← Back
+    </a>
+  </div>
 
-<form method="post">
-  {% csrf_token %}
-  <p>
-    <label>User</label><br>
-    {{ form.user }}
-  </p>
-  <p>
-    <label>Role</label><br>
-    {{ form.role }}
-  </p>
-  <button type="submit">Add</button>
-</form>
+  <div class="row g-4">
+    <!-- Form Card -->
+    <div class="col-12 col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger mb-3">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
 
-<p><a href="{% url 'group_detail' group.id %}">← Back to group</a></p>
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="{{ form.group.id_for_label }}">Group</label>
+              {{ form.group }}
+              {% if form.group.errors %}
+                <div class="invalid-feedback d-block">{{ form.group.errors|striptags }}</div>
+              {% else %}
+                <div class="form-text">Choose the group the member will join.</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="{{ form.user.id_for_label }}">User</label>
+              {{ form.user }}
+              {% if form.user.errors %}
+                <div class="invalid-feedback d-block">{{ form.user.errors|striptags }}</div>
+              {% else %}
+                <div class="form-text">Select an existing user account.</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="{{ form.role.id_for_label }}">Role</label>
+              <div class="d-flex gap-2 align-items-start flex-wrap">
+                <div class="flex-grow-1">
+                  {{ form.role }}
+                  {% if form.role.errors %}
+                    <div class="invalid-feedback d-block">{{ form.role.errors|striptags }}</div>
+                  {% endif %}
+                </div>
+                <span class="badge text-bg-light border py-2 px-3">Tip: start with “Member”</span>
+              </div>
+            </div>
+
+            <div class="pt-2 d-flex gap-2">
+              <button class="btn btn-primary px-4" type="submit">
+                Add member
+              </button>
+              <button class="btn btn-outline-secondary" type="reset">
+                Clear
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side info / preview -->
+    <div class="col-12 col-lg-5">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h5 class="mb-2">What happens next?</h5>
+          <ul class="text-muted mb-0">
+            <li>The user will appear in the group members list.</li>
+            <li>Their role controls permissions inside the group.</li>
+            <li>You can change role later from the members page.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm mt-3">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-dark-subtle d-flex align-items-center justify-content-center"
+                 style="width:44px;height:44px;">
+              <span class="fw-bold">i</span>
+            </div>
+            <div>
+              <div class="fw-semibold">Avoid duplicates</div>
+              <div class="text-muted small">If the member already exists in the group, show a clear error.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Make Django default widgets look like Bootstrap */
+  select, input, textarea {
+    width: 100% !important;
+  }
+</style>
 {% endblock %}

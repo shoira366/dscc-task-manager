@@ -44,3 +44,4 @@ htmlcov/
 # Docker
 # =========================
 docker-data/
+docker-compose.override.yml

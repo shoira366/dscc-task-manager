@@ -71,14 +71,29 @@ class TaskStatusForm(forms.ModelForm):
         fields = ["status"]
 
 class AddMemberForm(forms.Form):
-        user = forms.ModelChoiceField(queryset=User.objects.all())
-        role = forms.ChoiceField(choices=Membership.ROLE_CHOICES)
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.Select(attrs={
+            "class": "form-select",
+        })
+    )
 
-        def __init__(self, *args, group: Group, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.group = group
+    role = forms.ChoiceField(
+        choices=Membership.ROLE_CHOICES,
+        widget=forms.Select(attrs={
+            "class": "form-select",
+        })
+    )
 
-            # Only show users NOT already in this group
-            self.fields["user"].queryset = User.objects.exclude(
-                memberships__group=group
-            ).order_by("username")
+    def __init__(self, *args, group: Group, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.group = group
+
+        # Only users not already in group
+        self.fields["user"].queryset = User.objects.exclude(
+            memberships__group=group
+        ).order_by("username")
+
+        # Better labels
+        self.fields["user"].label = "Select user"
+        self.fields["role"].label = "Member role"
