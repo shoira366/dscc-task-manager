@@ -16,7 +16,7 @@ def test_dashboard_requires_login(client):
 
 @pytest.mark.django_db
 def test_admin_sees_admin_dashboard(client):
-    admin = User.objects.create_user(
+    _ = User.objects.create_user(
         username="admin1",
         password="pass12345",
         is_staff=True,
@@ -34,7 +34,7 @@ def test_admin_sees_admin_dashboard(client):
 
 @pytest.mark.django_db
 def test_normal_user_does_not_see_admin_dashboard(client):
-    user = User.objects.create_user(username="u1", password="pass12345")
+    _ = User.objects.create_user(username="u1", password="pass12345")
     client.login(username="u1", password="pass12345")
 
     resp = client.get(reverse("dashboard"))
@@ -64,7 +64,7 @@ def test_request_access_creates_pending_request(client):
 
 @pytest.mark.django_db
 def test_admin_can_approve_request_creates_user(client):
-    admin = User.objects.create_user(
+    _ = User.objects.create_user(
         username="admin2",
         password="pass12345",
         is_staff=True,
@@ -94,7 +94,7 @@ def test_admin_can_approve_request_creates_user(client):
 
 @pytest.mark.django_db
 def test_admin_can_reject_request_does_not_create_user(client):
-    admin = User.objects.create_user(
+    _ = User.objects.create_user(
         username="admin3",
         password="pass12345",
         is_staff=True,
