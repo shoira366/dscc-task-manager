@@ -115,7 +115,7 @@ jobs:
               docker compose pull web
 
               # Start/replace web first (nginx can keep serving while web restarts)
-              docker compose up -d --no-deps web
+              docker compose up -d --no-deps --force-recreate web
 
               # DB migrations + static
               docker compose exec -T web python manage.py migrate --noinput
