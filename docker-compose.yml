@@ -10,7 +10,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   web:
-    build: .
+    image: ghcr.io/shoira366/dscc-task-manager-web:latest
     restart: unless-stopped
     env_file: .env
     depends_on:
